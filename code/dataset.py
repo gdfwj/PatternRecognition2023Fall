@@ -60,7 +60,11 @@ class FaceDataset(Dataset):
 
 
 def get_dataset(name, transform=None):
-    return random_split(FaceDataset(name, transform), [0.8, 0.1, 0.1])
+    # return random_split(FaceDataset(name, transform), [0.8, 0.1, 0.1])
+    data = FaceDataset(name, transform)
+    train = int(0.8*len(data))
+    test = int(0.1*len(data))
+    return random_split(data, [train, test, len(data) - train - test])
 
 
 if __name__ == '__main__':
