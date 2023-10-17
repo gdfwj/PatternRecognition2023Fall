@@ -1,5 +1,5 @@
 import torch
-from dataset import get_dataset
+from dataset import get_dataset, get_one_dataset
 from model import GaussianDistribution, Perception
 from torch.utils.data.dataloader import DataLoader
 from torchvision import transforms
@@ -11,7 +11,8 @@ if __name__ == '__main__':
         transforms.ToTensor(),
     ]
     )
-    train_dataset, val_dataset, test_dataset = get_dataset("faces96", transform=transforms)
+    _, val_dataset, test_dataset = get_dataset("faces96", transform=transforms)
+    train_dataset = get_one_dataset("faces96", transform=transforms)
     print(len(train_dataset), len(val_dataset), len(test_dataset))
     train_loader = DataLoader(train_dataset, batch_size=len(train_dataset))
     val_loader = DataLoader(val_dataset, batch_size=len(val_dataset))

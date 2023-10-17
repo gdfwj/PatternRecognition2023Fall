@@ -1,3 +1,6 @@
 /data
 /code/__pycache__
 .idea
+/code/*.ckpt
+/code/*.pth
+/code/*.jpg
