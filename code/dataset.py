@@ -11,7 +11,7 @@ import json
 
 
 class FaceDataset(Dataset):
-    def __init__(self, folder, transform=None, type_="train"):
+    def __init__(self, folder, transform=None, one=False, type_="train"):
         torch.manual_seed(2023)
         self.data = []  # 图片路径
         self.target = []  # label
@@ -27,11 +27,11 @@ class FaceDataset(Dataset):
                         self.class_to_idx[cls] = idx
                         idx += 1
                     class_root = os.path.join(root_, cls)
-                    tmp_data = []
-                    tmp_target = []
                     for pic in os.listdir(class_root):
                         self.data.append(os.path.join(class_root, pic))
                         self.target.append(cls)
+                        if one:
+                            break
 
         elif folder == "faces95" or folder == "faces96" or folder == "grimace":
             root_ = root
@@ -43,6 +43,8 @@ class FaceDataset(Dataset):
                 for pic in os.listdir(class_root):
                     self.data.append(os.path.join(class_root, pic))
                     self.target.append(cls)
+                    if one:
+                        break
                 # print(self.data, self.target)
         else:
             raise NotImplementedError
@@ -66,6 +68,8 @@ def get_dataset(name, transform=None):
     test = int(0.1*len(data))
     return random_split(data, [train, test, len(data) - train - test])
 
+def get_one_dataset(name, transform=None):
+    return FaceDataset(name, transform, True)
 
 if __name__ == '__main__':
     f = FaceDataset("faces94", None, "val")

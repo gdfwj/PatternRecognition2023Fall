@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-from dataset import get_dataset
+from dataset import get_dataset, get_one_dataset
 from model import CNN, VGG
 from torch.utils.data.dataloader import DataLoader
 from torchvision import transforms
@@ -34,7 +34,8 @@ if __name__ == '__main__':
         transforms.ToTensor(),
     ]
     )
-    train_dataset, val_dataset, test_dataset = get_dataset("faces96", transform=transform)
+    _, val_dataset, test_dataset = get_dataset("faces96", transform=transform)
+    train_dataset = get_one_dataset("faces96", transform=transform)
     print(len(train_dataset), len(val_dataset), len(test_dataset))
     train_loader = DataLoader(train_dataset, batch_size=32)
     val_loader = DataLoader(val_dataset, batch_size=32)
@@ -44,21 +45,24 @@ if __name__ == '__main__':
     else:
         device = "cpu"
 
-    # model = CNN(152, 3, image_size=196).to(device)
+    model = CNN(152, 3, image_size=224).to(device)
     # model = nn.Sequential(
     #     Flatten(),
     #     nn.Linear(196 * 196 * 3, 152)
     # ).to(device)
-    # model.apply(init_normal)
-    model = VGG(3)
-    model.load_state_dict(torch.load("vgg_face_dag.pth"))
+    model.apply(init_normal)
+    # model = VGG(3)
+    # model.load_state_dict(torch.load("vgg_face_dag.pth"))
+    start = 0
     net = nn.Sequential(
         model,
         nn.Linear(2622, 152)
     ).to(device)
+    if start!=0:
+        net.load_state_dict(torch.load("CNN_best.ckpt"))
     lr = 1e-5
     optimizer = torch.optim.Adam(net.parameters(), lr=lr)
-    epoch = 100
+    epoch = 400
     loss_function = nn.CrossEntropyLoss()
     best_acc = 0.0
 
@@ -92,4 +96,4 @@ if __name__ == '__main__':
             if acc > best_acc:
                 best_acc = acc
                 print(f"saving model {i}")
-                torch.save(model.state_dict(), "VGG_best_model.ckpt")
+                torch.save(model.state_dict(), "CNN_best.ckpt")
