@@ -4,3 +4,4 @@
 /code/*.ckpt
 /code/*.pth
 /code/*.jpg
+/code/*/
