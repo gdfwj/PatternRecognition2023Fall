@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-from dataset import get_dataset
+from dataset import get_dataset, get_one_dataset
 from model import CNN, VGG
 from torch.utils.data.dataloader import DataLoader
 from torchvision import transforms
@@ -23,6 +23,14 @@ if __name__ == '__main__':
         transforms.ToTensor(),
     ]
     )
-    x = torch.ones([32, 100])
-    y = torch.ones([32])
-    print((x.T / y).shape)
+    # x = torch.ones([32, 100])
+    # y = torch.ones([32])
+    # print((x.T / y).shape)
+    train_dataset = get_one_dataset("faces96", transform=transform)
+    train_loader = DataLoader(train_dataset, batch_size=len(train_dataset))
+    for batch, _ in train_loader:  # calculate paras of normalization
+        print(batch.shape)
+        mean = torch.mean(batch, dim=[0, 2, 3])
+        std = torch.var(batch, dim=[0, 2, 3])
+        print(mean)
+        print(std)

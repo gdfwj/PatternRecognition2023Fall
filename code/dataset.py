@@ -4,6 +4,7 @@ import random
 import torch
 from torch.utils.data.dataset import Dataset
 from torch.utils.data import random_split
+from torchvision import transforms
 
 from PIL import Image
 
@@ -11,7 +12,7 @@ import json
 
 
 class FaceDataset(Dataset):
-    def __init__(self, folder, transform=None, one=False, type_="train"):
+    def __init__(self, folder, transform=None, one=False):
         torch.manual_seed(2023)
         self.data = []  # 图片路径
         self.target = []  # label
@@ -61,6 +62,51 @@ class FaceDataset(Dataset):
         return image, target
 
 
+class AugmentedDataset(Dataset):  # 增加旋转和翻折，0原图，1水平翻转
+    def __init__(self, folder, transform=None, type_="train"):
+        self.origin_dataset = get_one_dataset(folder, transform)
+
+    def __len__(self):
+        return len(self.origin_dataset) * 2
+
+    def __getitem__(self, idx):
+        image, target = self.origin_dataset[idx // 2]
+        if idx % 8 == 1:
+            image = transforms.RandomHorizontalFlip(1)(image)
+        # image = image + torch.randn(*image.shape)
+        return image, target
+
+
+class PairDataset(FaceDataset):
+    def __init__(self, folder, transform=None, one=False):
+        super(PairDataset, self).__init__(folder, transform, one)
+        temp = []
+        for i in self.target:
+            temp.append(self.class_to_idx[i])
+        self.target = temp
+
+    def __getitem__(self, idx):
+        img, target = self.data[idx], self.target[idx]
+        # img = Image.fromarray(img)
+        img = Image.open(img).convert('RGB')
+
+        x_i = None
+        x_j = None
+
+        if self.transform is not None:
+            x_i = self.transform(img)
+            x_j = self.transform(img)
+
+        # if self.target_transform is not None:
+        #     target = self.target_transform(target)
+
+        return x_i, x_j, target
+
+
+def get_pair_dataset(name, transform=None):
+    return PairDataset(name, transform, True), PairDataset(name, transform)
+
+
 def get_dataset(name, transform=None):
     # return random_split(FaceDataset(name, transform), [0.8, 0.1, 0.1])
     data = FaceDataset(name, transform)
@@ -68,8 +114,14 @@ def get_dataset(name, transform=None):
     test = int(0.1*len(data))
     return random_split(data, [train, test, len(data) - train - test])
 
+
 def get_one_dataset(name, transform=None):
     return FaceDataset(name, transform, True)
+
+
+def get_one_aug_dataset(name, transform=None):
+    return AugmentedDataset(name, transform)
+
 
 if __name__ == '__main__':
     f = FaceDataset("faces94", None, "val")

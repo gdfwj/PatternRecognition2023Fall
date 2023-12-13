@@ -4,6 +4,7 @@ import torch
 import numpy as np
 from torch import nn
 import torch.nn.functional as F
+from torchvision.models.resnet import resnet50
 
 
 class GaussianDistribution:
@@ -13,14 +14,30 @@ class GaussianDistribution:
 
     def train(self, x, y):
         self.class_pos = np.zeros([self.num_classes, *x[0].shape])
+        count = np.zeros(self.num_classes)
         for i in range(y.shape[0]):
             self.class_pos[y[i]] += x[i]
+            count[y[i]] += 1
+        for i in range(self.num_classes):
+            if count[i] > 0:
+                self.class_pos[i] = self.class_pos[i] / count[i]
+            else:
+                print(i)
 
     def predict(self, x):
         out = np.zeros(x.shape[0])
         for i in range(x.shape[0]):
-            dis = np.mean((x[i] - self.class_pos) ** 2, axis=(1, 2, 3))
+            dis = np.sum((x[i] - self.class_pos) ** 2, axis=(1, 2, 3))
             out[i] = np.argmin(dis)
+        return out
+
+    def predict_top5(self, x):
+        out = np.zeros([x.shape[0], 5])
+        for i in range(x.shape[0]):
+            dis = np.sum((x[i] - self.class_pos) ** 2, axis=(1, 2, 3))
+            tdis = torch.tensor(dis)
+            top5 = torch.topk(-tdis, 5)
+            out[i] = top5.indices.detach().numpy()
         return out
 
 
@@ -59,6 +76,12 @@ class Perception:
         x = x.reshape(x.shape[0], -1)
         return np.argmax(x @ self.w + self.b, axis=1)
 
+    def predict_top5(self, x):
+        x = x.reshape(x.shape[0], -1)
+        logits = torch.tensor(x @ self.w + self.b)
+        top5 = torch.topk(logits, 5)
+        return top5.indices.detach().numpy()
+
 
 class CNN(nn.Module):
     def __init__(self, num_classes, in_channels=3, image_size=128):
@@ -73,7 +96,7 @@ class CNN(nn.Module):
         )
         # 分类器
         self.classifier = nn.Sequential(
-            nn.Linear((image_size // 8) ** 2 * 64, 120),  # 这里把第三个卷积当作是全连接层了
+            nn.Linear((image_size // 8) ** 2 * 64, 120),
             nn.Linear(120, 84),
             nn.Linear(84, num_classes)
         )
@@ -193,6 +216,29 @@ class VGG(nn.Module):
         idx = torch.argmin(dis).item()
         print(f"face is class: {self.idx2name[idx]}")
         return idx
+
+
+class simModel(nn.Module):
+    def __init__(self, feature_dim=128):
+        super(simModel, self).__init__()
+
+        self.f = []
+        for name, module in resnet50().named_children():
+            if name == 'conv1':
+                module = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+            if not isinstance(module, nn.Linear) and not isinstance(module, nn.MaxPool2d):
+                self.f.append(module)
+        # encoder
+        self.f = nn.Sequential(*self.f)
+        # projection head
+        self.g = nn.Sequential(nn.Linear(2048, 512, bias=False), nn.BatchNorm1d(512),
+                               nn.ReLU(inplace=True), nn.Linear(512, feature_dim, bias=True))
+
+    def forward(self, x):
+        x = self.f(x)
+        feature = torch.flatten(x, start_dim=1)
+        out = self.g(feature)
+        return F.normalize(feature, dim=-1), F.normalize(out, dim=-1)
 
 
 if __name__ == '__main__':
