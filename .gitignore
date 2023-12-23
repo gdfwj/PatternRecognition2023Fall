@@ -5,3 +5,6 @@
 /code/*.pth
 /code/*.jpg
 /code/*/
+*.pptx
+*.zip
+/haar_pytorch
