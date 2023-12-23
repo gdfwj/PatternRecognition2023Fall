@@ -9,6 +9,7 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.models import resnet50
 from haar_pytorch import HaarForward
+from moremodel import TDiscriminator
 
 
 def init_normal(m):
@@ -34,14 +35,14 @@ if __name__ == '__main__':
     writer = SummaryWriter("ResNet_small")
     torch.manual_seed(2023)
     transform = transforms.Compose([
-        transforms.Resize(128),
+        transforms.Resize((128,128)),
         # transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize([0.2893, 0.3374, 0.4141], [0.0378, 0.0455, 0.0619])
     ]
     )
-    train_dataset, val_dataset, test_dataset = get_dataset("faces96", transform=transform)
-    # train_dataset = get_one_aug_dataset("faces96", transform=transform)
+    val_dataset, val_dataset, test_dataset = get_dataset(transform=transform)
+    train_dataset = get_one_aug_dataset(transform=transform)
     print(len(train_dataset), len(val_dataset), len(test_dataset))
     train_loader = DataLoader(train_dataset, batch_size=32)
     val_loader = DataLoader(val_dataset, batch_size=32)
@@ -51,10 +52,12 @@ if __name__ == '__main__':
     else:
         device = "cpu"
 
-    model = CNN(152, 12, image_size=64).to(device)
+    # model = CNN(392, 3, image_size=128).to(device)
     # model = resnet50()
-    # model.fc = nn.Linear(model.fc.in_features, 152)
+    # model.fc = nn.Linear(model.fc.in_features, 392)
     # model = model.to(device)
+    model = TDiscriminator(image_size=(3, 128, 128), num_classes=392).to(device)
+    model.apply(init_normal)
     # model = nn.Sequential(
     #     Flatten(),
     #     nn.Linear(196 * 196 * 3, 152)
@@ -64,12 +67,12 @@ if __name__ == '__main__':
     #     model,
     #     nn.Linear(4096, 152)
     # ).to(device)
-    # model = resnet34(152, True).to(device)
+    # model = resnet34(392, True).to(device)
     # model.apply(init_normal)
 
     lr = 1e-5
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    epoch = 100
+    epoch = 1000
     loss_function = nn.CrossEntropyLoss()
     best_acc = 0.0
 
@@ -79,7 +82,7 @@ if __name__ == '__main__':
             model.train()
             # print(x.shape)
             x = x.to(device)
-            x = HaarForward()(x)
+            # x = HaarForward()(x)
             # x = torch.flatten(x, 1)
             y = y.to(device)
             optimizer.zero_grad()
@@ -97,7 +100,7 @@ if __name__ == '__main__':
             acc5 = 0.0
             for x, y in val_loader:
                 x = x.to(device)
-                x = HaarForward()(x)
+                # x = HaarForward()(x)
                 # x = torch.flatten(x, 1)
                 y = y.to(device)
                 # predict = model.predict(x)
@@ -117,3 +120,4 @@ if __name__ == '__main__':
                 best_acc = acc
                 print(f"saving model {i}")
                 torch.save(model.state_dict(), "ResNet_small.ckpt")
+    print(f"best_acc: {best_acc}")
