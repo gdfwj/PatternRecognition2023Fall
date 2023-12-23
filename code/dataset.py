@@ -12,17 +12,31 @@ import json
 
 
 class FaceDataset(Dataset):
-    def __init__(self, folder, transform=None, one=False):
+    def __init__(self, folders=['faces94', 'faces95', 'faces96', 'grimace'], transform=None, one=False):
         torch.manual_seed(2023)
         self.data = []  # 图片路径
         self.target = []  # label
         self.class_to_idx = {}  # class name 到编号的映射
         self.transform = transform
         idx = 0
-        root = os.path.join("..", "data", folder, folder)
-        if folder == "faces94":
-            for x in os.listdir(root):
-                root_ = os.path.join(root, x)
+        for folder in folders:
+            root = os.path.join("..", "data", folder, folder)
+            if folder == "faces94":
+                for x in os.listdir(root):
+                    root_ = os.path.join(root, x)
+                    for cls in os.listdir(root_):
+                        if cls not in self.class_to_idx.keys():
+                            self.class_to_idx[cls] = idx
+                            idx += 1
+                        class_root = os.path.join(root_, cls)
+                        for pic in os.listdir(class_root):
+                            self.data.append(os.path.join(class_root, pic))
+                            self.target.append(cls)
+                            if one:
+                                break
+
+            elif folder == "faces95" or folder == "faces96" or folder == "grimace":
+                root_ = root
                 for cls in os.listdir(root_):
                     if cls not in self.class_to_idx.keys():
                         self.class_to_idx[cls] = idx
@@ -33,22 +47,9 @@ class FaceDataset(Dataset):
                         self.target.append(cls)
                         if one:
                             break
-
-        elif folder == "faces95" or folder == "faces96" or folder == "grimace":
-            root_ = root
-            for cls in os.listdir(root_):
-                if cls not in self.class_to_idx.keys():
-                    self.class_to_idx[cls] = idx
-                    idx += 1
-                class_root = os.path.join(root_, cls)
-                for pic in os.listdir(class_root):
-                    self.data.append(os.path.join(class_root, pic))
-                    self.target.append(cls)
-                    if one:
-                        break
-                # print(self.data, self.target)
-        else:
-            raise NotImplementedError
+                    # print(self.data, self.target)
+            else:
+                raise NotImplementedError
         json.dump(self.class_to_idx, open("class_to_idx.json", "w"))  # 存了一个json保留了编号映射
 
     def __len__(self):
@@ -103,22 +104,34 @@ class PairDataset(FaceDataset):
         return x_i, x_j, target
 
 
-def get_pair_dataset(name, transform=None):
+def get_pair_dataset(name=['faces94', 'faces95', 'faces96', 'grimace'], transform=None):
     return PairDataset(name, transform, True), PairDataset(name, transform)
 
 
-def get_dataset(name, transform=None):
+def get_dataset(name=['faces94', 'faces95', 'faces96', 'grimace'], transform=None):
     return random_split(FaceDataset(name, transform), [0.8, 0.1, 0.1])
 
 
-def get_one_dataset(name, transform=None):
+def get_one_dataset(name=['faces94', 'faces95', 'faces96', 'grimace'], transform=None):
     return FaceDataset(name, transform, True)
 
 
-def get_one_aug_dataset(name, transform=None):
+def get_one_aug_dataset(name=['faces94', 'faces95', 'faces96', 'grimace'], transform=None):
     return AugmentedDataset(name, transform)
 
 
 if __name__ == '__main__':
-    f = FaceDataset("faces94", None, "val")
-    print(len(f))
+    from torch.utils.data import DataLoader
+    from haar_pytorch import HaarForward
+    transform = transforms.Compose([
+        transforms.Resize(128),
+        # transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize([0.2893, 0.3374, 0.4141], [0.0378, 0.0455, 0.0619])
+    ]
+    )
+    train_dataset = get_one_aug_dataset(transform=transform)
+    # x = train_dataset[0][0].unsqueeze(0)
+    # x = HaarForward()(x)
+    print(len(train_dataset))
+
