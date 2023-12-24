@@ -751,6 +751,20 @@ class TDiscriminator(nn.Module):
         x = self.sigmoid(x)
         return x
 
+    def represent(self, x):
+        b, c, ph, pw = x.shape
+
+        x = self.patch_embedding(x)  # n, 128, 28, 28
+        x = x.flatten(2).transpose(1, 2)  # n, 784, 128
+
+        x = torch.cat((self.class_embedding.expand(b, -1, -1), x), dim=1)  # n, 785, 128
+
+        x = self.position_embedding(x)
+
+        x, scores = self.transformer(x)
+        x = self.norm(x)[:, 0]
+        return x
+
 
 class VGG(nn.Module):
     def __init__(self, in_channel):
