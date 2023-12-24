@@ -28,8 +28,6 @@ class SVM:
     def rgb2gray(self, rgb):
         r, g, b = rgb[:, 0, :, :], rgb[:, 1, :, :], rgb[:, 2, :, :]
         gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
-        # print('rgb.shape: ', rgb.shape)
-        # print('gray.shape: ', gray.shape)
         return gray.reshape(gray.shape[0], -1)
 
     def fit4clf_cross_validation(self, X, y, dup_times=5):
@@ -73,8 +71,6 @@ class SVM:
     def predict(self, X_test, y_test):
         X_test_pca = self.pca.transform(self.rgb2gray(X_test))
         y_pred = self.clf.predict(X_test_pca)
-        print(y_pred.shape)
-        # print(classification_report(y_test, y_pred))
         ConfusionMatrixDisplay.from_estimator(
             self.clf, X_test_pca, y_test, xticks_rotation="vertical"
         )
