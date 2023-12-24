@@ -9,3 +9,4 @@
 *.zip
 /haar_pytorch
 *.xlsx
+/cropped_data

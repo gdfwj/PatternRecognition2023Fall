@@ -104,6 +104,7 @@ def test(model, memory_data_loader, test_data_loader, epoch, epochs, c, temperat
 
 
 if __name__ == '__main__':
+    folder = "simCLR_yes"
     torch.manual_seed(2023)
     img_size = 64
     batch_size = 100
@@ -114,20 +115,18 @@ if __name__ == '__main__':
         transforms.Normalize([0.2893, 0.3374, 0.4141], [0.0378, 0.0455, 0.0619])
     ]
     )
-    _, _, test_dataset = get_dataset(transform=transform)
-    train_dataset, val_dataset = get_pair_dataset(transform=transform)
-    print(len(train_dataset), len(val_dataset), len(test_dataset))
+    train_dataset, val_dataset = get_pair_dataset(transform=transform, one=True, haar=False)
+    print(len(train_dataset), len(val_dataset))
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     val_loader = DataLoader(val_dataset, batch_size=batch_size)
-    test_loader = DataLoader(val_dataset, batch_size=batch_size)
     if torch.cuda.is_available():
-        device = torch.device("cuda:0")
+        device = torch.device("cuda:2")
     else:
         device = "cpu"
     # device = "cpu"
-    model = simModel(512).to(device)
+    model = simModel(512, channel=3).to(device)
     # model.apply(init_normal)
-    lr = 1e-5
+    lr = 1e-4
     epochs = 20
     results = {'train_loss': [], 'test_acc@1': [], 'test_acc@5': []}  # << -- output
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-6)
@@ -137,17 +136,13 @@ if __name__ == '__main__':
     best_simModel = None
     c = 392
     fintune_epochs = 100
-    if not os.path.exists('results'):
-        os.mkdir('results')
-    if not os.path.exists('pretrained_model'):
-        os.mkdir('pretrained_model')
 
     for epoch in range(1, epochs + 1):
         train_loss = train(model, train_loader, optimizer, epoch, epochs, batch_size=batch_size,
                            temperature=temperature, device=device)
         # results['train_loss'].append(train_loss)
         # print(f"train_loss:{train_loss}")
-        test_acc_1, test_acc_5 = test(model, val_loader, test_loader, epoch, epochs, c, k=k, temperature=temperature,
+        test_acc_1, test_acc_5 = test(model, train_loader, val_loader, epoch, epochs, c, k=k, temperature=temperature,
                                       device=device)
         # results['test_acc@1'].append(test_acc_1)
         # results['test_acc@5'].append(test_acc_5)
@@ -156,13 +151,19 @@ if __name__ == '__main__':
         if test_acc_1 > best_acc:
             best_acc = test_acc_1
             best_simModel = model
-            torch.save(model.state_dict(), './pretrained_model/trained_simclr_model.pth')
+            torch.save(model.state_dict(), f'./{folder}/trained_simclr_model.pth')
 
-    model = nn.Linear(512, 392).to(device)
+    # finish training representation
+    model = nn.Sequential(
+        nn.Linear(2048, 1024),
+        nn.ReLU(),
+        nn.Linear(1024, 392)
+    ).to(device)
     model.apply(init_normal)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-6)
     loss_function = nn.CrossEntropyLoss()
-    train_dataset = get_one_dataset(transform=transform)
+    train_dataset, test_dataset = get_one_dataset(transform=transform, haar=False)
+    print(len(train_dataset), len(val_dataset))
     train_loader = DataLoader(train_dataset, batch_size=batch_size, num_workers=4)
     val_loader = DataLoader(test_dataset, batch_size=batch_size)
     for epoch in range(1, fintune_epochs+1):
@@ -174,7 +175,7 @@ if __name__ == '__main__':
             # x = HaarForward()(x)
             # x = torch.flatten(x, 1)
             y = y.to(device)
-            _, x = best_simModel(x)
+            x, _ = best_simModel(x)
             optimizer.zero_grad()
             logits = model(x)
             loss = loss_function(logits, y)
@@ -191,7 +192,7 @@ if __name__ == '__main__':
                 x = x.to(device)
                 # x = HaarForward()(x)
                 # x = torch.flatten(x, 1)
-                _, x = best_simModel(x)
+                x, _ = best_simModel(x)
                 y = y.to(device)
                 # predict = model.predict(x)
                 logits = model(x)
