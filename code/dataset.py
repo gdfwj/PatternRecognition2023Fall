@@ -9,10 +9,11 @@ from torchvision import transforms
 from PIL import Image
 
 import json
+from haar_pytorch import HaarForward
 
 
 class FaceDataset(Dataset):
-    def __init__(self, folders=['faces94', 'faces95', 'faces96', 'grimace'], transform=None, one=False):
+    def __init__(self, folders=['faces94', 'faces95', 'faces96', 'grimace'], transform=None, one=False, el=False):
         torch.manual_seed(2023)
         self.data = []  # 图片路径
         self.target = []  # label
@@ -29,7 +30,11 @@ class FaceDataset(Dataset):
                             self.class_to_idx[cls] = idx
                             idx += 1
                         class_root = os.path.join(root_, cls)
+                        flag = True
                         for pic in os.listdir(class_root):
+                            if flag and el:
+                                flag = False
+                                continue
                             self.data.append(os.path.join(class_root, pic))
                             self.target.append(cls)
                             if one:
@@ -42,7 +47,11 @@ class FaceDataset(Dataset):
                         self.class_to_idx[cls] = idx
                         idx += 1
                     class_root = os.path.join(root_, cls)
+                    flag = True
                     for pic in os.listdir(class_root):
+                        if flag and el:
+                            flag = False
+                            continue
                         self.data.append(os.path.join(class_root, pic))
                         self.target.append(cls)
                         if one:
@@ -60,6 +69,7 @@ class FaceDataset(Dataset):
         image = Image.open(image).convert('RGB')
         if self.transform is not None:
             image = self.transform(image)
+        # image = HaarForward()(image.unsqueeze(0)).squeeze(0)
         return image, target
 
 
@@ -97,6 +107,8 @@ class PairDataset(FaceDataset):
         if self.transform is not None:
             x_i = self.transform(img)
             x_j = self.transform(img)
+            # x_i = HaarForward()(x_i.unsqueeze(0)).squeeze(0)
+            # x_j = HaarForward()(x_j.unsqueeze(0)).squeeze(0)
 
         # if self.target_transform is not None:
         #     target = self.target_transform(target)
@@ -105,7 +117,7 @@ class PairDataset(FaceDataset):
 
 
 def get_pair_dataset(name=['faces94', 'faces95', 'faces96', 'grimace'], transform=None):
-    return PairDataset(name, transform, True), PairDataset(name, transform)
+    return PairDataset(name, transform), PairDataset(name, transform)
 
 
 def get_dataset(name=['faces94', 'faces95', 'faces96', 'grimace'], transform=None):
@@ -113,7 +125,7 @@ def get_dataset(name=['faces94', 'faces95', 'faces96', 'grimace'], transform=Non
 
 
 def get_one_dataset(name=['faces94', 'faces95', 'faces96', 'grimace'], transform=None):
-    return FaceDataset(name, transform, True)
+    return FaceDataset(name, transform, True), FaceDataset(name, transform, False, True)
 
 
 def get_one_aug_dataset(name=['faces94', 'faces95', 'faces96', 'grimace'], transform=None):
@@ -122,16 +134,33 @@ def get_one_aug_dataset(name=['faces94', 'faces95', 'faces96', 'grimace'], trans
 
 if __name__ == '__main__':
     from torch.utils.data import DataLoader
-    # from haar_pytorch import HaarForward
+    from haar_pytorch import HaarForward, HaarInverse
+    import matplotlib.pyplot as plt
+
     transform = transforms.Compose([
-        transforms.Resize(128),
+        transforms.Resize((128, 128)),
         # transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-        transforms.Normalize([0.2893, 0.3374, 0.4141], [0.0378, 0.0455, 0.0619])
     ]
     )
     train_dataset = get_one_aug_dataset(transform=transform)
-    # x = train_dataset[0][0].unsqueeze(0)
-    # x = HaarForward()(x)
+    print(train_dataset[0][0].shape)
+    # img = train_dataset[0][0].unsqueeze(0)
+    # vis = img.squeeze()
+    # vis = (vis - torch.min(vis)) / (torch.max(vis) - torch.min(vis))
+    # # print(1)
+    # vis = vis.permute(1, 2, 0)
+    # # print(2)
+    # plt.imshow(vis.detach().squeeze().cpu().numpy())
+    # plt.show()
+    # plt.close()
+    #
+    # vis = HaarInverse()(HaarForward()(img)).squeeze()
+    # vis = (vis - torch.min(vis)) / (torch.max(vis) - torch.min(vis))
+    # # print(1)
+    # vis = vis.permute(1, 2, 0)
+    # # print(2)
+    # plt.imshow(vis.detach().squeeze().cpu().numpy())
+    # plt.show()
+    # plt.close()
     print(len(train_dataset))
-

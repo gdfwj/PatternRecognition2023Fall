@@ -141,6 +141,7 @@ class Perception:
         self.lr = lr
 
     def train(self, x, y):
+        # print(x.shape)
         x = x.reshape(x.shape[0], -1)
         count = 0
         while True:
@@ -318,7 +319,7 @@ class simModel(nn.Module):
         self.f = []
         for name, module in resnet50().named_children():
             if name == 'conv1':
-                module = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+                module = nn.Conv2d(12, 64, kernel_size=3, stride=1, padding=1, bias=False)
             if not isinstance(module, nn.Linear) and not isinstance(module, nn.MaxPool2d):
                 self.f.append(module)
         # encoder
