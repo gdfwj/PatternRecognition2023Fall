@@ -10,12 +10,13 @@ if __name__ == '__main__':
     torch.manual_seed(2023)
     transforms = transforms.Compose([
         transforms.Resize((128, 128)),
-        transforms.ToTensor()
+        transforms.ToTensor(),
+        transforms.Normalize([0.2893, 0.3374, 0.4141], [0.0378, 0.0455, 0.0619])
     ]
     )
     for haar in [True, False]:
         for crop in [True, False]:
-            train_dataset, val_dataset = get_one_aug_dataset(transform=transforms, haar=haar, crop=crop)
+            train_dataset, val_dataset = get_one_dataset(transform=transforms, haar=haar, crop=crop)
             # val_dataset, train_dataset = PCADataset("x_PCA.npy", True), PCADataset("x_PCA.npy")
             # all_dataset = FaceDataset("faces96", transforms)
             # print(len(train_dataset), len(val_dataset))
@@ -25,7 +26,8 @@ if __name__ == '__main__':
             #     model = Perception(392, 12*64*64, 1e-5)
             # else:
             #     model = Perception(392, 3*128*128, 1e-5)
-            model = GaussianDistribution(394)
+            # model = GaussianDistribution(394)
+            model = SVM(394)
             for x, y in train_loader:
 
                 # x = HaarForward()(x)
@@ -38,7 +40,7 @@ if __name__ == '__main__':
                 # print(count)
                 x = np.array(x)
                 y = np.array(y)
-                model.train(x, y)
+                model.train(x, y, PCA_=False)
             for x, y in val_loader:
                 # x = HaarForward()(x)
                 x = np.array(x)
@@ -47,10 +49,10 @@ if __name__ == '__main__':
                 acc = np.mean(y_pred == y)
                 print(f"Haar: {haar}, crop: {crop}")
                 print(acc)
-                y_top5 = model.predict_top5(x)
-                # print(y_top5.shape)
-                acc5 = 0.0
-                for i in range(y_top5.shape[0]):
-                    if y[i] in y_top5[i]:
-                        acc5 += 1
-                print(acc5 / len(y_top5))
+                # y_top5 = model.predict_top5(x)
+                # # print(y_top5.shape)
+                # acc5 = 0.0
+                # for i in range(y_top5.shape[0]):
+                #     if y[i] in y_top5[i]:
+                #         acc5 += 1
+                # print(acc5 / len(y_top5))

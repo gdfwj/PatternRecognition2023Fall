@@ -9,8 +9,9 @@ from haar_pytorch import HaarForward
 if __name__ == '__main__':
     torch.manual_seed(2023)
     transforms = transforms.Compose([
-        transforms.Resize((64,64)),
+        transforms.Resize((128, 128)),
         transforms.ToTensor(),
+        transforms.Normalize([0.2893, 0.3374, 0.4141], [0.0378, 0.0455, 0.0619])
     ]
     )
     train_dataset= get_all(transform=transforms, haar=False, crop=False)

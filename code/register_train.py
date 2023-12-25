@@ -37,28 +37,48 @@ if __name__ == '__main__':
         transforms.Normalize([0.2893, 0.3374, 0.4141], [0.0378, 0.0455, 0.0619])
     ]
     )
-    thresholds = [1000000,
-                  0.01,
-                  0.05,
-                  0.1,
-                  0.5,
-                  1,
-                  5,
-                  10,
-                  50,
-                  100,
-                  150,
-                  160,
-                  170,
-                  180,
-                  190,
-                  200,
-                  250,
-                  300,
-                  350,
-                  500,
-                  1000,
-                  5000]
+    thresholds = [# 1000000,
+                  # 0.01,
+                  # 0.05,
+                  # 0.1,
+                  # 0.5,
+                  # 1,
+                  # 5,
+                  # 10,
+                  # 50,
+                  # 100,
+                  # 150,
+                  # 160,
+                  # 170,
+                  # 180,
+                  # 190,
+                  # 200,
+                  # 250,
+                  # 300,
+                  # 350,
+                  # 500,
+                  # 1000,
+                  # 5000, 10000, 50000, 100000
+                101000, 102000, 103000, 104000, 105000, 106000, 107000
+                    ]
+    train_dataset, val_dataset = get_one_dataset(transform=transform, haar=False, crop=False)
+    train_loader = DataLoader(train_dataset, batch_size=len(train_dataset))
+    val_loader = DataLoader(val_dataset, batch_size=len(val_dataset))
+    from model import SVM
+    model = SVM(394)
+    for x, y in train_loader:
+        # x = HaarForward()(x)
+        # count=[]
+        # for i in range(152):
+        #     count.append(0)
+        # for i in y:
+        #     i = int(i)
+        #     count[i] += 1
+        # print(count)
+        x = np.array(x)
+        y = np.array(y)
+        model.train(x, y, PCA_=True, onlyPCA=True)
+
     with torch.no_grad():
         for threshold in thresholds:
             train_dataset = get_all(name=['faces94', 'faces95', 'faces96'], transform=transform, haar=False)
@@ -68,6 +88,7 @@ if __name__ == '__main__':
                 device = torch.device("cuda:0")
             else:
                 device = "cpu"
+            device = "cpu"
 
             # model = CNN(152, 3, image_size=196).to(device)
             # model = nn.Sequential(
@@ -83,9 +104,9 @@ if __name__ == '__main__':
             # model.load_state_dict(torch.load("vgg_no/
             # model = CNN(394, 3, image_size=128).to(device)
             # model.load_state_dict(torch.load("cnn_big/best.ckpt"))
-            model = TDiscriminator(image_size=(3, 128, 128), num_classes=394)
-            model.load_state_dict(torch.load("swin_False_False_best.ckpt"))
-            model.to(device)
+            # model = TDiscriminator(image_size=(3, 128, 128), num_classes=394)
+            # model.load_state_dict(torch.load("swin_False_False_best.ckpt"))
+            # model.to(device)
             # model = VGG(3)
             # model.load_state_dict(torch.load("CNN_no/best.ckpt"))
             # model.to(device)
@@ -95,7 +116,7 @@ if __name__ == '__main__':
             for x, y in train_loader:
                 x = x.to(device)
                 y = y.to(device)
-                register.register_pre_train(x, y)
+                register.register_pre_train(x, y, 150)
             test_set = get_all(name=['grimace'], transform=transform, haar=False)
             register_dict = {}
             FAR = 0

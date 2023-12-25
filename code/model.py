@@ -24,6 +24,7 @@ class SVM:
         self.clf = None
         self.h = h
         self.w = w
+        self.use_PCA=False
 
     def rgb2gray(self, rgb):
         r, g, b = rgb[:, 0, :, :], rgb[:, 1, :, :], rgb[:, 2, :, :]
@@ -39,22 +40,28 @@ class SVM:
                 y_dup.append(y[idx])
         return torch.FloatTensor(np.array(X_dup)), y_dup
 
-    def train(self, X_train, y_train, n_components=150):
-        # introspect the images arrays to find the shapes (for plotting)
-        X_train = self.rgb2gray(X_train)
-        print("Extracting the top %d eigenfaces from %d faces" % (n_components, X_train.shape[0]))
-        t0 = time()
-        pca = PCA(n_components=n_components, svd_solver="randomized", whiten=False).fit(X_train)
-        print("done in %0.3fs" % (time() - t0))
-        self.pca = pca
-        self.eigenfaces = pca.components_.reshape((n_components, self.h, self.w))
+    def train(self, X_train, y_train, n_components=150, PCA_=True, onlyPCA=False):
+        self.use_PCA = PCA_
+        if PCA_:
+            # introspect the images arrays to find the shapes (for plotting)
+            X_train = self.rgb2gray(X_train)
+            print("Extracting the top %d eigenfaces from %d faces" % (n_components, X_train.shape[0]))
+            t0 = time()
+            pca = PCA(n_components=n_components, svd_solver="randomized", whiten=False).fit(X_train)
+            print("done in %0.3fs" % (time() - t0))
+            self.pca = pca
+            if onlyPCA:
+                return
+            # self.eigenfaces = pca.components_.reshape((n_components, self.h, self.w))
 
-        X_train_pca = pca.transform(X_train)
-        # X_test_pca = pca.transform(X_test)
-        # Train a SVM classification model
+            X_train_pca = pca.transform(X_train)
+            # X_test_pca = pca.transform(X_test)
+            # Train a SVM classification model
 
-        print("Fitting the classifier to the training set")
-        t0 = time()
+            print("Fitting the classifier to the training set")
+            t0 = time()
+        else:
+            X_train_pca = X_train.reshape(X_train.shape[0], -1)
         param_grid = {
             "C": loguniform(1e3, 1e4),
             "gamma": loguniform(1e-4, 1e-2),
@@ -68,15 +75,24 @@ class SVM:
         print("Best estimator found by grid search:")
         print(self.clf.best_estimator_)
 
-    def predict(self, X_test, y_test):
-        X_test_pca = self.pca.transform(self.rgb2gray(X_test))
+    def predict(self, X_test):
+        if self.use_PCA:
+            X_test_pca = self.pca.transform(self.rgb2gray(X_test))
+        else:
+            X_test_pca = X_test.reshape(X_test.shape[0], -1)
         y_pred = self.clf.predict(X_test_pca)
-        ConfusionMatrixDisplay.from_estimator(
-            self.clf, X_test_pca, y_test, xticks_rotation="vertical"
-        )
-        plt.tight_layout()
-        plt.show()
+        # ConfusionMatrixDisplay.from_estimator(
+        #     self.clf, X_test_pca, y_test, xticks_rotation="vertical"
+        # )
+        # plt.tight_layout()
+        # plt.show()
         return y_pred
+
+    def represent(self, X_test):
+        # X_test = X_test.cpu()
+        trans = torch.tensor(self.pca.transform(self.rgb2gray(X_test)))
+        return trans
+
 
     def plot_gallery(images, titles, h, w, n_row=3, n_col=4):
         """Helper function to plot a gallery of portraits"""

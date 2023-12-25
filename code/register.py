@@ -17,8 +17,11 @@ class RegisterHelper:
             self.idx2name[j] = i
         self.registered = None
 
-    def register_pre_train(self, x, y):
-        self.registered = torch.zeros([len(self.class_dict), 128]).to(x.get_device())
+    def register_pre_train(self, x, y, latent_dim=128):
+        if x.get_device() > 0:
+            self.registered = torch.zeros([len(self.class_dict), latent_dim]).to(x.get_device())
+        else:
+            self.registered = torch.zeros([len(self.class_dict), latent_dim])
         count = torch.zeros([len(self.class_dict)])
         count_all = 0
         for i in range(x.shape[0]):

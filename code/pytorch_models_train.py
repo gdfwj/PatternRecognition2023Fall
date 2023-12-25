@@ -60,18 +60,18 @@ if __name__ == '__main__':
             # model.to(device)
 
             if haar:
-                model = nn.Sequential(
-                    Flatten(),
-                    nn.Linear(12*64*64, 394)
-                )
-                # model = CNN(394, 12, image_size=64).to(device)
+                # model = nn.Sequential(
+                #     Flatten(),
+                #     nn.Linear(12*64*64, 394)
+                # )
+                model = CNN(394, 12, image_size=64).to(device)
                 # model = TDiscriminator(image_size=(12, 64, 64), num_classes=394).to(device)
             else:
-                model = nn.Sequential(
-                    Flatten(),
-                    nn.Linear(3*128*128, 394)
-                )
-                # model = CNN(394, 3, image_size=128).to(device)
+                # model = nn.Sequential(
+                #     Flatten(),
+                #     nn.Linear(3*128*128, 394)
+                # )
+                model = CNN(394, 3, image_size=128).to(device)
                 # model = TDiscriminator(image_size=(3, 128, 128), num_classes=394).to(device)
             # model = TDiscriminator(image_size=(12, 32, 32), num_classes=392).to(device)
             model.to(device)
@@ -91,8 +91,8 @@ if __name__ == '__main__':
             lr = 1e-4
             optimizer = torch.optim.Adam(model.parameters(), lr=lr)
             epoch = 500
-            # loss_function = nn.CrossEntropyLoss()
-            loss_function = nn.HingeEmbeddingLoss()
+            loss_function = nn.CrossEntropyLoss()
+            # loss_function = nn.HingeEmbeddingLoss()
             best_acc = 0.0
 
             for i in range(epoch):
@@ -104,7 +104,6 @@ if __name__ == '__main__':
                     # x = HaarForward()(x)
                     # x = torch.flatten(x, 1)
                     y = y.to(device)
-                    # y = F.one_hot(y, num_classes=394)
                     optimizer.zero_grad()
                     logits = model(x)
                     loss = loss_function(logits, y)
