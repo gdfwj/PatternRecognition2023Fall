@@ -64,20 +64,20 @@ if __name__ == '__main__':
     train_dataset, val_dataset = get_one_dataset(transform=transform, haar=False, crop=False)
     train_loader = DataLoader(train_dataset, batch_size=len(train_dataset))
     val_loader = DataLoader(val_dataset, batch_size=len(val_dataset))
-    from model import SVM
-    model = SVM(394)
-    for x, y in train_loader:
-        # x = HaarForward()(x)
-        # count=[]
-        # for i in range(152):
-        #     count.append(0)
-        # for i in y:
-        #     i = int(i)
-        #     count[i] += 1
-        # print(count)
-        x = np.array(x)
-        y = np.array(y)
-        model.train(x, y, PCA_=True, onlyPCA=True)
+    # from model import SVM
+    # model = SVM(394)
+    # for x, y in train_loader:
+    #     # x = HaarForward()(x)
+    #     # count=[]
+    #     # for i in range(152):
+    #     #     count.append(0)
+    #     # for i in y:
+    #     #     i = int(i)
+    #     #     count[i] += 1
+    #     # print(count)
+    #     x = np.array(x)
+    #     y = np.array(y)
+    #     model.train(x, y, PCA_=True, onlyPCA=True)
 
     with torch.no_grad():
         for threshold in thresholds:
@@ -88,7 +88,6 @@ if __name__ == '__main__':
                 device = torch.device("cuda:0")
             else:
                 device = "cpu"
-            device = "cpu"
 
             # model = CNN(152, 3, image_size=196).to(device)
             # model = nn.Sequential(
@@ -104,9 +103,9 @@ if __name__ == '__main__':
             # model.load_state_dict(torch.load("vgg_no/
             # model = CNN(394, 3, image_size=128).to(device)
             # model.load_state_dict(torch.load("cnn_big/best.ckpt"))
-            # model = TDiscriminator(image_size=(3, 128, 128), num_classes=394)
-            # model.load_state_dict(torch.load("swin_False_False_best.ckpt"))
-            # model.to(device)
+            model = TDiscriminator(image_size=(3, 128, 128), num_classes=394)
+            model.load_state_dict(torch.load("swin_False_False_best.ckpt"))
+            model.to(device)
             # model = VGG(3)
             # model.load_state_dict(torch.load("CNN_no/best.ckpt"))
             # model.to(device)

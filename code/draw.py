@@ -45,7 +45,7 @@ a, b, c = op.curve_fit(func, x, y)[0]
 print(a, b, c)
 x = np.arange(0.00000001, 1, 0.00000001)
 y = func(x, a, b, c)
-vit_no,=plt.plot(x, y, color='deepskyblue')
+vit_no, = plt.plot(x, y, color='deepskyblue')
 
 x = [1.00E-07,
      1.00E-07,
@@ -132,36 +132,36 @@ x = [1.00E-07,
      1,
      ]
 y = [0.95,
-0.95,
-0.95,
-0.95,
-0.95,
-0.95,
-0.95,
-0.948,
-0.9363,
-0.9203,
-0.9173,
-0.9173,
-0.9137,
-0.9085,
-0.9052,
-0.8837,
-0.8791,
-0.8748,
-0.8519,
-0.8042,
-0.4454,
-0.4454,
-0.3101,
-0.0556,
-0.0059,
-0.0059,
-0.0059,
-0.0039,
-1e-7,
-1e-7
-]
+     0.95,
+     0.95,
+     0.95,
+     0.95,
+     0.95,
+     0.95,
+     0.948,
+     0.9363,
+     0.9203,
+     0.9173,
+     0.9173,
+     0.9137,
+     0.9085,
+     0.9052,
+     0.8837,
+     0.8791,
+     0.8748,
+     0.8519,
+     0.8042,
+     0.4454,
+     0.4454,
+     0.3101,
+     0.0556,
+     0.0059,
+     0.0059,
+     0.0059,
+     0.0039,
+     1e-7,
+     1e-7
+     ]
 
 x = np.array(x)
 y = np.array(y)
@@ -173,6 +173,6 @@ y = func(x, a, b, c)
 pca, = plt.plot(x, y, color='green')
 plt.xlabel('FAR')
 plt.ylabel('FRR')
-plt.legend(handles=[vit_no,vit_yes, pca],labels=["ViT", "ViT Augment", "PCA"],loc="upper right",fontsize=6)
+plt.legend(handles=[vit_no, vit_yes, pca], labels=["ViT", "ViT Augment", "PCA"], loc="upper right", fontsize=6)
 plt.savefig('lines.png')
 plt.show()
