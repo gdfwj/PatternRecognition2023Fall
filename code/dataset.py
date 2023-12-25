@@ -98,16 +98,19 @@ class FaceDataset(Dataset):
 
 
 class AugmentedDataset(Dataset):  # 增加旋转和翻折，0原图，1水平翻转
-    def __init__(self, folder, transform=None, type_="train"):
-        self.origin_dataset = get_one_dataset(folder, transform)
+    def __init__(self, folders=['faces94', 'faces95', 'faces96', 'grimace'], transform=None, one=False, el=False,
+                 haar=False, crop=False):
+        self.origin_dataset = FaceDataset(folders, transform, one, el, haar, crop)
 
     def __len__(self):
-        return len(self.origin_dataset) * 2
+        return len(self.origin_dataset) * 3
 
     def __getitem__(self, idx):
-        image, target = self.origin_dataset[idx // 2]
-        if idx % 8 == 1:
+        image, target = self.origin_dataset[idx // 3]
+        if idx % 3 == 1:
             image = transforms.RandomHorizontalFlip(1)(image)
+        if idx % 3 == 2:
+            image = image + torch.randn(*image.shape)
         # image = image + torch.randn(*image.shape)
         return image, target
 
@@ -158,8 +161,9 @@ def get_all(name=['faces94', 'faces95', 'faces96', 'grimace'], transform=None, h
     return FaceDataset(folders=name, transform=transform, haar=haar, crop=crop)
 
 
-def get_one_aug_dataset(name=['faces94', 'faces95', 'faces96', 'grimace'], transform=None):
-    return AugmentedDataset(name, transform)
+def get_one_aug_dataset(name=['faces94', 'faces95', 'faces96', 'grimace'], transform=None, haar=False, crop=False):
+    return AugmentedDataset(name, transform, True, haar=haar, crop=crop), FaceDataset(name, transform, False, True,
+                                                                                 haar=haar, crop=crop)
 
 
 class PCADataset(Dataset):

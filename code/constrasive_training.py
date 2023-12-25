@@ -106,8 +106,8 @@ def test(model, memory_data_loader, test_data_loader, epoch, epochs, c, temperat
 if __name__ == '__main__':
     folder = "simCLR_yes"
     torch.manual_seed(2023)
-    img_size = 64
-    batch_size = 100
+    img_size = 128
+    batch_size = 16
     transform = transforms.Compose([
         transforms.Resize((img_size, img_size)),
         # transforms.RandomHorizontalFlip(),
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     val_loader = DataLoader(val_dataset, batch_size=batch_size)
     if torch.cuda.is_available():
-        device = torch.device("cuda:2")
+        device = torch.device("cuda:0")
     else:
         device = "cpu"
     # device = "cpu"
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     k = 200
     best_acc = 0.0
     best_simModel = None
-    c = 392
+    c = 394
     fintune_epochs = 100
 
     for epoch in range(1, epochs + 1):

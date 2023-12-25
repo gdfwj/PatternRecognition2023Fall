@@ -27,6 +27,7 @@ class GaussianDistribution:
     def predict(self, x):
         out = np.zeros(x.shape[0])
         for i in range(x.shape[0]):
+            # print(i)
             dis = np.sum((x[i] - self.class_pos) ** 2, axis=(1, 2, 3))
             out[i] = np.argmin(dis)
         return out
@@ -34,6 +35,7 @@ class GaussianDistribution:
     def predict_top5(self, x):
         out = np.zeros([x.shape[0], 5])
         for i in range(x.shape[0]):
+            # print(i)
             dis = np.sum((x[i] - self.class_pos) ** 2, axis=(1, 2, 3))
             tdis = torch.tensor(dis)
             top5 = torch.topk(-tdis, 5)
@@ -69,9 +71,9 @@ class Perception:
                             flag = False
                             self.w[:, k] -= i
                             self.b[k] -= 1
-            if flag or count > 20:
+            if flag or count > 100:
                 break
-            print(f"cycle{count}, err{err / (x.shape[0])}")
+            # print(f"cycle{count}, err{err / (x.shape[0])}")
 
     def predict(self, x):
         x = x.reshape(x.shape[0], -1)
@@ -110,15 +112,9 @@ class CNN(nn.Module):
         # print(x.shape)
         x = torch.flatten(x, 1)  # 展平 （1， 16*5*5）
         x = self.classifier(x)
-        logits = self.out(x)  # 输出 10
+        logits = self.out(x)  # 输出 num_classes
         return logits
 
-    def predict(self, x):
-        x = self.features(x)  # 输出 16*5*5 特征图
-        x = torch.flatten(x, 1)  # 展平 （1， 16*5*5）
-        logits = self.classifier(x)  # 输出 10
-        out = torch.argmax(logits, 1)
-        return out
 
     def represent(self, x):
         x = self.features(x)  # 输出 16*5*5 特征图
@@ -233,47 +229,6 @@ class VGG(nn.Module):
         x = self.relu(x)
         x = self.fc9(x)
         return x
-
-    def register_train(self, x, y, class_dict_path="class_to_idx.json"):
-        self.train(False)
-        self.class_dict = json.load(open(class_dict_path))
-        self.idx2name = {}
-        for i, j in self.class_dict.items():
-            self.idx2name[j] = i
-        print(self.class_dict)
-        self.registered = torch.zeros([len(self.class_dict), 4096])
-        count = torch.zeros([len(self.class_dict)])
-        count_all = 0
-        for i in range(x.shape[0]):
-            if count[y[i]] == 0:
-                count[y[i]] += 1
-                count_all += 1
-                self.registered[y[i]] += self.forward(x[i].unsqueeze(0)).squeeze(0)
-                if count_all == len(self.class_dict):  # choose one picture in per class
-                    break
-        # for i in range(len(count)):
-        #     if count[i] == 0:
-        #         count[i] += 1
-        # self.registered = (self.registered.T / count).T
-
-    def register(self, x, y):
-        if self.registered == None:
-            raise NotImplementedError
-        latent = self.forward(x.unsqueeze(0))
-        print(latent.shape)
-        self.registered = torch.cat((self.registered, latent), 0)
-        # print(len(self.class_dict))
-        self.class_dict[y] = len(self.class_dict)
-        # print(len(self.class_dict))
-        self.idx2name[len(self.class_dict) - 1] = y
-
-    def register_predict(self, x):
-        print(self.idx2name)
-        latent = self.forward(x.unsqueeze(0)).squeeze(0)
-        dis = torch.sum((self.registered - latent) ** 2, dim=1)
-        idx = torch.argmin(dis).item()
-        print(f"face is class: {self.idx2name[idx]}")
-        return idx
 
 
 class simModel(nn.Module):

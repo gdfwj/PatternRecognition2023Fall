@@ -9,19 +9,22 @@ from haar_pytorch import HaarForward
 if __name__ == '__main__':
     torch.manual_seed(2023)
     transforms = transforms.Compose([
-        transforms.Resize((64,64)),
+        transforms.Resize((128, 128)),
         transforms.ToTensor(),
     ]
     )
     for haar in [True, False]:
         for crop in [True, False]:
-            train_dataset, val_dataset = get_one_dataset(transform=transforms, haar=False, crop=True)
+            train_dataset, val_dataset = get_one_aug_dataset(transform=transforms, haar=haar, crop=crop)
             # val_dataset, train_dataset = PCADataset("x_PCA.npy", True), PCADataset("x_PCA.npy")
             # all_dataset = FaceDataset("faces96", transforms)
             # print(len(train_dataset), len(val_dataset))
             train_loader = DataLoader(train_dataset, batch_size=len(train_dataset))
             val_loader = DataLoader(val_dataset, batch_size=len(val_dataset))
-            # model = Perception(392, 12*32*32, 1e-5)
+            # if haar:
+            #     model = Perception(392, 12*64*64, 1e-5)
+            # else:
+            #     model = Perception(392, 3*128*128, 1e-5)
             model = GaussianDistribution(394)
             for x, y in train_loader:
 
