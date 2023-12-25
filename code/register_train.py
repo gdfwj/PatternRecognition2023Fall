@@ -115,7 +115,7 @@ if __name__ == '__main__':
             for x, y in train_loader:
                 x = x.to(device)
                 y = y.to(device)
-                register.register_pre_train(x, y, 150)
+                register.register_pre_train(x, y)
             test_set = get_all(name=['grimace'], transform=transform, haar=False)
             register_dict = {}
             FAR = 0
