@@ -1,6 +1,6 @@
 import torch
 from dataset import *
-from model import GaussianDistribution, Perception
+from model import GaussianDistribution, Perception, SVM
 from torch.utils.data.dataloader import DataLoader
 from torchvision import transforms
 import numpy as np
@@ -10,7 +10,7 @@ if __name__ == '__main__':
     torch.manual_seed(2023)
     transforms = transforms.Compose([
         transforms.Resize((128, 128)),
-        transforms.ToTensor(),
+        transforms.ToTensor()
     ]
     )
     for haar in [True, False]:
